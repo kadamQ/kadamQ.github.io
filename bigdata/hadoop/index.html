@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light dark"><meta name="description" content="Learn Hadoop as a complete system: visual explanations of HDFS, YARN and MapReduce, followed by a Java WordCount lab on Windows and WSL2."><title>Hadoop, HDFS and MapReduce | Teaching materials</title><link rel="stylesheet" href="/assets/site.css"><link rel="stylesheet" href="/assets/hadoop-lesson.css"><script src="/assets/site.js" defer></script></head><body><header class="top"><div class="top-inner"><a href="/" class="brand">Teaching materials</a><nav aria-label="Main navigation"><a href="/bigdata/" >Big Data</a><a href="/bigdata/hadoop/" aria-current="page">Hadoop</a><a href="/bigdata/spark/" >Spark</a></nav><button class="theme" id="theme" type="button" aria-label="Toggle colour theme">Theme</button></div></header><div class="layout"><aside class="sidebar" aria-label="Lesson navigation"><a class="back" href="/bigdata/">← Big Data</a><div class="label">Week 9 · Contents</div><a href="#intro">01 · Introduction</a><a href="#ecosystem">02 · The Hadoop ecosystem</a><a href="#architecture">03 · System architecture</a><a href="#hdfs">04 · HDFS</a><a href="#yarn">05 · YARN</a><a href="#mapreduce">06 · MapReduce</a><a href="#setup">07 · Windows &amp; WSL2 setup</a><a href="#hdfs-lab">08 · HDFS in practice</a><a href="#java">09 · Java WordCount</a><a href="#run">10 · Run &amp; inspect the job</a><a href="#practice">11 · Practise your knowledge</a><a href="#references">12 · References</a></aside><main class="lesson"><div class="hero"><div><div class="eyebrow">Big Data Management and Processing · Week 9</div><h1>Hadoop, HDFS and MapReduce</h1><p class="lead">Understand how a distributed system stores data, allocates resources and executes a batch-processing job. Then implement and run a Java WordCount application.</p><div class="meta"><span><a href="https://hadoop.apache.org/releases">Hadoop 3.5.0</a></span><span>Java 17</span><span>Windows / WSL2</span></div></div><img src="/assets/hadoop-elephant.svg" alt="Apache Hadoop elephant mascot" width="128" height="128"></div><section class="section" id="intro"><div class="section-index">01 / HADOOP</div><h2>Introduction</h2>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light dark"><meta name="description" content="Learn Hadoop as a complete system: visual explanations of HDFS, YARN and MapReduce, followed by Java WordCount and optional Python aggregation labs on Windows and WSL2."><title>Hadoop, HDFS and MapReduce | Teaching materials</title><link rel="stylesheet" href="/assets/site.css"><link rel="stylesheet" href="/assets/hadoop-lesson.css"><script src="/assets/site.js" defer></script></head><body><header class="top"><div class="top-inner"><a href="/" class="brand">Teaching materials</a><nav aria-label="Main navigation"><a href="/bigdata/" >Big Data</a><a href="/bigdata/hadoop/" aria-current="page">Hadoop</a><a href="/bigdata/spark/" >Spark</a></nav><button class="theme" id="theme" type="button" aria-label="Toggle colour theme">Theme</button></div></header><div class="layout"><aside class="sidebar" aria-label="Lesson navigation"><a class="back" href="/bigdata/">← Big Data</a><div class="label">Week 9 · Contents</div><a href="#intro">01 · Introduction</a><a href="#ecosystem">02 · The Hadoop ecosystem</a><a href="#architecture">03 · System architecture</a><a href="#hdfs">04 · HDFS</a><a href="#yarn">05 · YARN</a><a href="#mapreduce">06 · MapReduce</a><a href="#setup">07 · Windows &amp; WSL2 setup</a><a href="#hdfs-lab">08 · HDFS in practice</a><a href="#java">09 · Java WordCount</a><a href="#run">10 · Run &amp; inspect the job</a><a href="#practice">11 · Practise your knowledge</a><a href="#aggregation">12 · Beyond WordCount</a><a href="#streaming">13 · Python Streaming</a><a href="#references">14 · References</a></aside><main class="lesson"><div class="hero"><div><div class="eyebrow">Big Data Management and Processing · Week 9</div><h1>Hadoop, HDFS and MapReduce</h1><p class="lead">Understand how a distributed system stores data, allocates resources and executes a batch-processing job. Then implement and run a Java WordCount application.</p><div class="meta"><span><a href="https://hadoop.apache.org/releases">Hadoop 3.5.0</a></span><span>Java 17</span><span>Windows / WSL2</span></div></div><img src="/assets/hadoop-elephant.svg" alt="Apache Hadoop elephant mascot" width="128" height="128"></div><section class="section" id="intro"><div class="section-index">01 / HADOOP</div><h2>Introduction</h2>
 <p><strong>Apache Hadoop</strong> is an open-source software framework for storing and processing large datasets across a <strong>cluster</strong> (connected computers that cooperate). Hadoop is the software; the cluster supplies the machines, storage and network.</p>
 <p>We will follow one problem throughout this chapter: <strong>count how often each search term appears in text files exported by a university website</strong>. The lab uses two tiny files so that every intermediate result can be checked by hand. The same division of responsibilities applies to much larger datasets.</p>
 <nav class="edu-route" aria-label="Learning route">
@@ -113,6 +113,50 @@
 </div><figcaption>The NameNode arranges replacement replicas after detecting the failure. B3 already has two surviving copies. Restoring the target takes time and requires eligible storage; A need not return first.</figcaption></figure>
 <p>A <strong>heartbeat</strong> is a periodic message indicating that a DataNode is alive. A <strong>block report</strong> lists the blocks it stores. These serve different purposes: failure detection and knowledge of block placement. Replication protects against some storage failures; it does not undo an accidental file deletion.</p>
 <aside class="note"><strong>Relating the model to our lab</strong><div>A 300 MiB file with a nominal 128 MiB block size uses 128, 128 and 44 MiB blocks before replication and overhead; the final partial block is not padded to 128 MiB. Our lab has one DataNode and replication factor 1, so it cannot demonstrate survival of a DataNode failure.</div></aside>
+<h3 id="hdfs-workload-fit">Which workloads suit HDFS?</h3>
+<p>A <strong>workload</strong> is the pattern of reads, writes and processing an application performs. HDFS favours large files read sequentially: consuming bytes in order. <strong>Batch processing</strong> handles a collected dataset as a job, such as scanning yesterday's logs to produce a daily total.</p>
+<p><strong>Throughput</strong> measures how much data is transferred or processed per unit of time. <strong>Latency</strong> measures how long one request takes to receive its response. HDFS prioritises high throughput; this does not promise a quick response to every small request.</p>
+<figure class="diagram edu-figure">
+<h4 class="edu-title">Two different meanings of “fast”</h4>
+<div class="edu-grid">
+<div><div class="edu-scope"><div class="edu-stage">Throughput · rate</div><div class="edu-card"><strong>Scan a large dataset</strong><p>Many bytes pass through the system.</p></div><div class="edu-down" aria-hidden="true">↓</div><div class="edu-card"><strong>How much each second?</strong><p>A higher data rate finishes bulk work sooner.</p></div></div></div>
+<div><div class="edu-scope"><div class="edu-stage">Latency · delay</div><div class="edu-card"><strong>Request one small item</strong><p>A caller waits for a response.</p></div><div class="edu-down" aria-hidden="true">↓</div><div class="edu-card"><strong>How long must I wait?</strong><p>A shorter delay helps interactive use.</p></div></div></div>
+</div>
+<figcaption>A system can move large amounts of data efficiently while individual requests still involve noticeable waiting.</figcaption>
+</figure>
+
+<h3>Why file size matters</h3>
+<p>The NameNode keeps metadata about files and blocks in memory. More files and blocks therefore require more metadata, even when their total contents are unchanged. Opening many files also repeats lookup and connection work. If processing creates many short tasks, scheduling and starting them can consume a large share of the runtime.</p>
+<figure class="diagram edu-figure">
+<h4 class="edu-title">Same 1 GiB of contents, different metadata counts</h4>
+<div class="edu-stack">
+<div class="edu-lane"><div class="edu-card"><strong>2 files × 512 MiB</strong><p><span class="chip">File 1</span> <span class="chip">File 2</span></p></div><div class="edu-arrow"><span aria-hidden="true">→</span><small>tracked as</small></div><div class="edu-card"><strong>2 files + 8 blocks</strong><p>Each file uses four 128 MiB blocks.</p></div></div>
+<div class="edu-lane"><div class="edu-card"><strong>1,024 files × 1 MiB</strong><p><span class="chip">File 1</span> <span class="chip">File 2</span> <span class="chip">…</span> <span class="chip">File 1,024</span></p></div><div class="edu-arrow"><span aria-hidden="true">→</span><small>tracked as</small></div><div class="edu-card"><strong>1,024 files + 1,024 blocks</strong><p>Each file has one partial block.</p></div></div>
+</div>
+<figcaption>Assume ordinary writes with a 128 MiB block size; 1 GiB = 1,024 MiB. Counts exclude replicas. A 1 MiB file stores 1 MiB of contents, without padding to 128 MiB; metadata and other storage overhead still exist.</figcaption>
+</figure>
+<p>Grouping related records into larger files can reduce these costs. Task count also depends on how the processing framework divides its input; a file count alone does not determine it.</p>
+
+<h3>Changing a file: the end matters</h3>
+<p>For the replicated files used here, <strong>append</strong> adds bytes at the end; <strong>truncate</strong> shortens a closed file by removing bytes from its end. HDFS permits these operations, but does not support arbitrary <strong>in-place updates</strong>: replacing existing bytes at a chosen position.</p>
+<figure class="diagram edu-figure">
+<h4 class="edu-title">Three changes to the same starting bytes</h4>
+<div class="edu-grid three">
+<div class="edu-card"><strong>Append D · supported</strong><code>ABC</code><div class="edu-down" aria-hidden="true">↓</div><code>ABCD</code><p>Keep existing bytes; extend the end.</p></div>
+<div class="edu-card"><strong>Truncate · supported</strong><code>ABC</code><div class="edu-down" aria-hidden="true">↓</div><code>AB</code><p>Keep the beginning; remove the tail.</p></div>
+<div class="edu-card"><strong>Replace B · unsupported in place</strong><code>ABC</code><div class="edu-down" aria-hidden="true">↓</div><code>AXC</code><p>This change requires another approach.</p></div>
+</div>
+<figcaption>Letters represent bytes. To revise records in the middle, an application can write a replacement file.</figcaption>
+</figure>
+
+<div class="table-wrap"><table class="edu-table"><thead><tr><th>Workload</th><th>HDFS fit</th><th>Reason</th></tr></thead><tbody>
+<tr><td>Daily scans of large log files</td><td>Good</td><td>Long sequential reads suit bulk throughput.</td></tr>
+<tr><td>Millions of tiny standalone files</td><td>Less suitable</td><td>Metadata and repeated file access add overhead.</td></tr>
+<tr><td>Interactive record lookups</td><td>Less suitable directly</td><td>Low response latency is the main requirement.</td></tr>
+<tr><td>Frequent changes to existing records</td><td>Less suitable directly</td><td>Arbitrary in-place updates are unavailable.</td></tr>
+</tbody></table></div>
+<details><summary>Predict: will doubling the DataNodes remove the tiny-file problem?</summary><p>No. It adds storage capacity, but does not reduce the existing file and block metadata or the repeated work of opening those files. Organising the same records into fewer files addresses those costs more directly.</p></details>
+<p class="source-note">Design trade-offs: <a href="https://hadoop.apache.org/docs/r3.5.0/hadoop-project-dist/hadoop-hdfs/HdfsDesign.html#Assumptions_and_Goals">Apache HDFS architecture</a>; file operations: <a href="https://hadoop.apache.org/docs/r3.5.0/hadoop-project-dist/hadoop-common/filesystem/filesystem.html">filesystem specification</a>; processing overhead: <a href="https://hadoop.apache.org/docs/r3.5.0/hadoop-mapreduce-client/hadoop-mapreduce-client-core/MapReduceTutorial.html#How_Many_Maps.3F">MapReduce task sizing</a>.</p>
 <p class="chapter-bridge">HDFS now supplies readable input. <a href="#yarn">YARN</a> provides resources to process it; later, <a href="#hdfs-lab">HDFS in practice</a> lets you inspect files, blocks and their locations.</p>
 </section>
 <section class="section" id="yarn">
@@ -220,6 +264,17 @@
 <div class="edu-card"><strong>Intermediate · worker storage</strong><p>Map output buffered and spilled to local disk for reducers to fetch.</p></div><div class="edu-arrow"><span aria-hidden="true">→</span><small>shuffle + reduce</small></div>
 <div class="edu-card"><strong>Final output · HDFS</strong><p>The report remains available after the job completes.</p></div>
 </div><figcaption>Intermediate map output is not replicated by HDFS. If it is lost before reducers can use it, the corresponding map task may need to run again. This explains why readable input and task retries both matter.</figcaption></figure>
+<h3 id="combiner">Combiner: reduce the data sent between tasks</h3>
+<p>In WordCount, the final answer needs the <em>total</em> count of a word. It does not need every occurrence to travel separately across the network. A <strong>combiner</strong> is an optional aggregation of intermediate key–value pairs: it replaces several contributions for a key with a smaller, equivalent contribution.</p>
+<figure class="diagram edu-figure"><h4 class="edu-title">The same five words, with local partial counts</h4><div class="edu-grid">
+<div class="edu-scope"><span class="edu-stage">Map task 1</span><div class="edu-card"><strong>Emitted pairs</strong><code>(hadoop, 1)<br>(spark, 1)<br>(hadoop, 1)</code></div><div class="edu-down" aria-hidden="true">↓</div><div class="edu-card"><strong>If combined locally</strong><code>(hadoop, 2)<br>(spark, 1)</code></div></div>
+<div class="edu-scope"><span class="edu-stage">Map task 2</span><div class="edu-card"><strong>Emitted pairs</strong><code>(spark, 1)<br>(data, 1)</code></div><div class="edu-down" aria-hidden="true">↓</div><div class="edu-card"><strong>If combined locally</strong><code>(spark, 1)<br>(data, 1)</code></div></div>
+</div><div class="edu-down" aria-hidden="true">↓</div><div class="edu-card"><strong>Shuffle by key, then reduce</strong><p><code>data: [1] → 1</code><br><code>hadoop: [2] → 2</code><br><code>spark: [1, 1] → 2</code></p></div><figcaption>These two illustrative map tasks send four intermediate pairs instead of five. The final counts are unchanged. Real savings depend on repeated keys and on whether and how often combining runs; actual map tasks depend on the input splits.</figcaption></figure>
+<h4>The result must not depend on the combiner running</h4>
+<p>Hadoop may run a combiner zero, one or several times. Its output must remain valid input for further combining and for the reducer, using the same intermediate key and value types. It must not rely on side effects, such as separately updating an external total. In WordCount, adding partial counts preserves the total: <code>1 + 1 + 1</code> and <code>2 + 1</code> both give <code>3</code>. The reducer still has to combine contributions from different map tasks.</p>
+<div class="edu-check"><strong>A useful correctness question</strong><p>Would the answer remain correct if combining were skipped, or if some partial results were combined again? If not, this operation is not a safe combiner.</p></div>
+<p>Our original Java lab deliberately uses no combiner, so its record counters stay easy to predict. The optional <a href="#streaming">Python lab</a> shows how to enable one. The <a href="#aggregation">response-time exercise</a> explains why averaging local averages fails and how a sum together with a count solves that problem.</p>
+<p class="source-note">Further detail: <a href="https://hadoop.apache.org/docs/r3.5.0/hadoop-mapreduce-client/hadoop-mapreduce-client-core/MapReduceTutorial.html">Apache MapReduce tutorial</a> and <a href="https://hadoop.apache.org/docs/r3.5.0/api/org/apache/hadoop/mapred/JobConf.html#setCombinerClass(java.lang.Class)">combiner execution contract</a>.</p>
 <p class="chapter-bridge">The full system now fits together: HDFS stores input and output, YARN supplies resources, and MapReduce transforms the records. Next, <a href="#setup">set up the environment</a>, then use the same model in the <a href="#java">Java WordCount lab</a>.</p>
 </section>
 <section class="section" id="setup"><div class="section-index">07 / HADOOP</div><h2>Windows & WSL2 setup</h2><p>Install Hadoop in Ubuntu under Windows Subsystem for Linux (WSL2). The same machine will run the NameNode, DataNode, ResourceManager and NodeManager. No Docker or SSH setup is needed for the direct daemon commands used here.</p><figure class="diagram edu-figure"><h4 class="edu-title">Where to run commands and where to look</h4><div class="edu-scope"><span class="edu-stage">Windows host</span><div class="edu-grid"><div class="edu-card "><strong>PowerShell</strong><p>Install and inspect WSL2</p><code>wsl --list --verbose</code></div><div class="edu-card "><strong>Web browser</strong><p>Inspect Linux services through localhost</p><code>9870: HDFS · 8088: YARN</code></div></div><div class="edu-scope system-space"><span class="edu-stage">Ubuntu under WSL2</span><div class="edu-grid"><div class="edu-card "><strong>Ubuntu terminal</strong><p>Install Java and Hadoop; run every Bash command below</p></div><div class="edu-card "><strong>Java service processes</strong><p>NameNode · DataNode<br>ResourceManager · NodeManager</p></div></div><div class="edu-commands"><strong>Linux files:</strong> Hadoop installation, configuration, source code and DataNode storage live under your Linux home directory.</div></div></div><figcaption>Boxes show containment, not network hops. The browser inspects services; the Ubuntu terminal runs the job. The local installation still uses the HDFS and YARN service interfaces.</figcaption></figure>
@@ -227,7 +282,7 @@
 <div class="step"><span class="step-no">2</span><div><h3>Install Java 17 and tools</h3><p>The following commands run in the Ubuntu terminal.</p><div class="code"><div class="code-head"><span>Bash</span><button type="button" class="copy" aria-label="Copy Bash code">Copy</button></div><pre><code>sudo apt update
 sudo apt install -y openjdk-17-jdk curl tar procps git
 java -version
-javac -version</code></pre></div><p>The <strong>JDK</strong> (Java Development Kit) includes the Java runtime and compiler. The course uses JDK 17 for Hadoop 3.5.0 server processes and Java compilation.</p></div></div>
+javac -version</code></pre></div><p>The <strong>JDK</strong> (Java Development Kit) includes the Java runtime and compiler. The course uses JDK 17 for Hadoop 3.5.0 server processes and Java compilation. Both version checks above should report 17. If another JDK is already selected on your machine, select JDK 17 before continuing; the next step derives <code>JAVA_HOME</code> from the selected compiler.</p></div></div>
 <div class="step"><span class="step-no">3</span><div><h3>Download Hadoop</h3><p>Use the matching binary from the <a href="https://hadoop.apache.org/releases">official release page</a>. The example command is for x86-64 Ubuntu. For ARM64, use the matching AArch64 binary and adapt the archive filename. Verify the published checksum or signature before extracting.</p><div class="code"><div class="code-head"><span>Bash</span><button type="button" class="copy" aria-label="Copy Bash code">Copy</button></div><pre><code>cd ~
 curl -fLO https://dlcdn.apache.org/hadoop/common/hadoop-3.5.0/hadoop-3.5.0.tar.gz
 tar -xzf hadoop-3.5.0.tar.gz
@@ -493,4 +548,160 @@ hdfs dfs -cat /week9/extension-output/part-r-00000</code></pre></div>
 <details><summary>Expected extension result and explanation</summary><div class="code"><pre><code>data	1
 hadoop	2</code></pre></div><p><code>Hadoop</code> becomes <code>hadoop</code>. The words <code>is</code> and <code>big</code> are shorter than four characters, so the Mapper emits nothing for them. Three emitted pairs form two groups; the unchanged Reducer sums them. The tokenizer already skips empty whitespace-separated tokens.</p><p>Expected record counters: map input 1, map output 3, reduce input groups 2, reduce output 2.</p></details>
 <p>Explain the result using all three roles: where HDFS stores the new input and output, how YARN provides execution resources, and which MapReduce transformation changed.</p>
-</section><section class="section" id="references"><div class="section-index">12 / HADOOP</div><h2>References</h2><p>Official documentation for further study:</p><ul><li><a href="https://hadoop.apache.org/modules.html">Core Hadoop modules</a> and <a href="https://hadoop.apache.org/related.html">related projects</a></li><li><a href="https://hadoop.apache.org/docs/r3.5.0/hadoop-project-dist/hadoop-common/ClusterSetup.html">Hadoop cluster architecture and deployment</a></li><li><a href="https://hadoop.apache.org/">Apache Hadoop project</a> and <a href="https://hadoop.apache.org/releases">releases</a></li><li><a href="https://hadoop.apache.org/docs/r3.5.0/hadoop-project-dist/hadoop-hdfs/HdfsDesign.html">HDFS architecture</a></li><li><a href="https://hadoop.apache.org/docs/r3.5.0/hadoop-yarn/hadoop-yarn-site/YARN.html">YARN architecture</a></li><li><a href="https://hadoop.apache.org/docs/r3.5.0/hadoop-mapreduce-client/hadoop-mapreduce-client-core/MapReduceTutorial.html">MapReduce tutorial</a></li><li><a href="https://hadoop.apache.org/docs/r3.5.0/hadoop-project-dist/hadoop-common/SingleCluster.html">Single-node Hadoop setup</a></li><li><a href="https://learn.microsoft.com/en-us/windows/wsl/install">Microsoft WSL installation</a></li></ul></section></main></div><footer class="footer"><div>Big Data Management and Processing · Eszterházy Károly Catholic University</div><a href="https://github.com/kadamQ/kadamQ.github.io">GitHub repository</a></footer></body></html>
+<p class="chapter-bridge"><strong>Next:</strong> Apply the same system model to a new question: <a href="#aggregation">calculate the average response time for each website page</a>.</p>
+</section><section class="section" id="aggregation"><div class="section-index">12 / HADOOP</div><h2>Beyond WordCount: average response time</h2>
+<p class="chapter-question">How do we turn a new question into keys, values and a correct distributed aggregation?</p>
+<p>The university website now exports how long each page request took. We want the <strong>mean response time for each page</strong>: the sum of its valid durations divided by the number of valid measurements. This is an <strong>aggregation</strong>, a calculation that summarises a group of records. HDFS stores the measurements, YARN provides execution resources, and our MapReduce program defines the grouping and arithmetic.</p>
+<h3>Start with a small, inspectable dataset</h3>
+<p><strong>CSV</strong> means comma-separated values: each row contains fields, and the first row below names them. A <strong>schema</strong> describes those fields and their allowed values. Here <code>path</code> is a page path starting with <code>/</code>, and <code>response_ms</code> is a nonnegative whole number of milliseconds. One millisecond is one thousandth of a second.</p>
+<div class="code"><div class="code-head"><span>response-times.csv</span><button type="button" class="copy" aria-label="Copy response-time sample">Copy</button></div><pre><code>path,response_ms
+/search,10
+/courses,80
+/search,20
+/courses,120
+/search,90
+/library,50
+/library,70
+/courses,</code></pre></div>
+<p><a href="lab/streaming/data/response-times.csv" download>Download the sample CSV</a>. The exercise uses one record per physical line. The Python extension reads CSV quoting within that line; multiline CSV fields are outside this input format. Page keys must not contain tab or control characters because the intermediate protocol uses tabs to separate fields.</p>
+<h3>Decide what to do with an incomplete measurement</h3>
+<p>The last record has no duration. Our policy is to skip it and count it as an invalid record. The header is not a measurement. A duration of <code>0</code> is valid, whereas a missing value is not a measured zero. This policy is part of the computation and must be stated before writing the Mapper.</p>
+<figure class="diagram edu-figure"><h4 class="edu-title">Validation changes which measurements enter the average</h4><div class="edu-grid">
+<div class="edu-card"><span class="edu-stage">Valid</span><strong><code>/search,10</code></strong><p>Keep the record and emit its contribution.</p><code>(/search, (10, 1))</code></div>
+<div class="edu-card"><span class="edu-stage">Missing duration</span><strong><code>/courses,</code></strong><p>Emit no pair. Increase the invalid-record counter.</p></div>
+</div><figcaption>There are eight data rows: seven valid measurements and one invalid record. Treating the missing value as zero would change the meaning of the result.</figcaption></figure>
+<h3>Choose the key and the information to preserve</h3>
+<p>The key is the page path, because we need one result per page. The intermediate value is a pair <code>(sum_ms, count)</code>. Each accepted measurement contributes its duration and <code>1</code>. A partial result then has exactly the same form, so it can be combined again.</p>
+<figure class="diagram edu-figure"><h4 class="edu-title">Follow one page through the same processing model</h4><div class="edu-grid three">
+<div class="edu-card"><span class="edu-stage">Map</span><strong>Three /search records</strong><code>(/search, (10, 1))<br>(/search, (20, 1))<br>(/search, (90, 1))</code></div>
+<div class="edu-card"><span class="edu-stage">Shuffle and group</span><strong>One key, all contributions</strong><code>/search<br>[(10, 1), (20, 1), (90, 1)]</code><p>The records can arrive from different map tasks.</p></div>
+<div class="edu-card"><span class="edu-stage">Reduce</span><strong>Sum, count, then divide</strong><code>sum = 120<br>count = 3<br>mean = 40.00 ms</code></div>
+</div><figcaption>WordCount used a word as the key and a count as the value. The grouping principle is the same; the new question determines the key and the information each value must preserve.</figcaption></figure>
+<h3>Why a mean of partial means is usually wrong</h3>
+<p>Suppose two map tasks process different numbers of requests for the same page. The first sees <code>10, 20</code>; the second sees <code>90</code>. Their means are <code>15</code> and <code>90</code>. Averaging those two numbers gives <code>52.5</code>, which gives the one-record group the same weight as the two-record group.</p>
+<figure class="diagram edu-figure"><h4 class="edu-title">Keep both the sum and the number of measurements</h4><div class="edu-grid">
+<div class="edu-scope"><span class="edu-stage">Input portion A</span><div class="edu-card"><strong>10 ms and 20 ms</strong><p>Partial sum: 30<br>Number of measurements: 2</p><code>(/search, (30, 2))</code></div></div>
+<div class="edu-scope"><span class="edu-stage">Input portion B</span><div class="edu-card"><strong>90 ms</strong><p>Partial sum: 90<br>Number of measurements: 1</p><code>(/search, (90, 1))</code></div></div>
+</div><div class="edu-down" aria-hidden="true">↓</div><div class="edu-card"><strong>Reducer adds the two sums and the two counts</strong><code>(30 + 90) / (2 + 1) = 40.00 ms</code></div><figcaption>The combiner merges pairs by addition and outputs another pair. Only the final reducer divides. With no combiner, it adds the original <code>(duration, 1)</code> pairs and obtains the same answer.</figcaption></figure>
+<p>The two portions above illustrate the combining rule; they are not a claim that our tiny CSV file will create two map tasks. The actual input splits determine the map tasks.</p>
+<h3>Check the whole result</h3>
+<div class="table-wrap"><table><thead><tr><th>Page key</th><th>Valid durations (ms)</th><th>Sum</th><th>Count</th><th>Mean (ms)</th></tr></thead><tbody><tr><td><code>/courses</code></td><td>80, 120</td><td>200</td><td>2</td><td>100.00</td></tr><tr><td><code>/library</code></td><td>50, 70</td><td>120</td><td>2</td><td>60.00</td></tr><tr><td><code>/search</code></td><td>10, 20, 90</td><td>120</td><td>3</td><td>40.00</td></tr></tbody></table></div>
+<p>The output has three page keys. The optional <a href="#streaming-average">Python extension</a> runs this calculation and reports invalid records separately. Its <a href="lab/streaming/data/expected-average.tsv" download>expected output</a> is tab-separated; rounding to two decimal places is applied only when writing the final means.</p>
+<details><summary>Predict: what if we replace the missing /courses duration with a measured 0?</summary><p>It becomes a valid measurement. The sum remains 200, the count becomes 3, and the mean becomes 66.67 ms after rounding. There are no invalid rows. A new measurement is different from a missing one.</p></details>
+<details><summary>Predict: can we reuse the final averaging reducer as the combiner?</summary><p>No. The final reducer outputs a mean and discards the count, so its output no longer preserves the intermediate sum/count contract. Use a separate combiner that outputs <code>(sum_ms, count)</code>; perform division once at the end.</p></details>
+<p class="source-note">Framework background: <a href="https://hadoop.apache.org/docs/r3.5.0/hadoop-mapreduce-client/hadoop-mapreduce-client-core/MapReduceTutorial.html">Apache MapReduce tutorial</a>. The sample measurements are deliberately small teaching data.</p>
+<p class="chapter-bridge"><strong>Next:</strong> Use <a href="#streaming">Python scripts as Hadoop mappers and reducers</a>, first with the familiar WordCount input and then with these measurements.</p>
+</section>
+
+<section class="section" id="streaming"><div class="section-index">13 / HADOOP</div><h2>Optional: Python with Hadoop Streaming</h2>
+<p class="chapter-question">Can the same MapReduce job use a language other than Java?</p>
+<p><strong>Yes: Hadoop Streaming connects programs in other languages to Hadoop’s MapReduce framework.</strong> Each Python 3 process reads lines through its input channel, <strong>standard input (<code>stdin</code>)</strong>, and writes result records through <strong>standard output (<code>stdout</code>)</strong>. A separate diagnostics channel, <strong>standard error (<code>stderr</code>)</strong>, carries counters and error messages.</p>
+<p>Hadoop still manages input splits, tasks, shuffle, grouping and HDFS output. This is <strong>batch MapReduce</strong>. “Streaming” names the process interface; the job still processes a collected input dataset.</p>
+<figure class="diagram edu-figure"><h4 class="edu-title">One process per task, many input records</h4>
+<div class="edu-flow"><div class="edu-card"><span class="edu-stage">Map task</span><strong>Python mapper process</strong><code>stdin: input lines</code><p>Read each line and emit word–count pairs on stdout.</p></div><div class="edu-arrow"><span aria-hidden="true">→</span><small>Tab-separated pairs</small></div><div class="edu-card"><span class="edu-stage">Hadoop</span><strong>Shuffle and sort</strong><p>Partition by key and bring matching words together.</p></div><div class="edu-arrow"><span aria-hidden="true">→</span><small>Grouped stdin</small></div><div class="edu-card"><span class="edu-stage">Reduce task</span><strong>Python reducer process</strong><code>stdout: final counts</code><p>Read consecutive key groups and emit one total per word.</p></div></div>
+<figcaption>Each mapper or reducer task starts its executable when initialized, then sends many records through that process. With the default text input format, the mapper receives line text without Hadoop’s byte-offset key. The default output protocol uses the first tab to separate a key from its value.</figcaption></figure>
+<p class="source-note">Protocol and execution: <a href="https://hadoop.apache.org/docs/r3.5.0/hadoop-streaming/HadoopStreaming.html#How_Streaming_Works">Apache Hadoop Streaming: how it works</a>.</p>
+<aside class="note"><strong>Prerequisites</strong><div>Complete the earlier Hadoop setup and upload the two text files to <code>/week9/input</code>. Use Bash in Ubuntu/WSL2. <strong>Python 3 must be available as <code>python3</code> on every worker that executes a task</strong>; in the single-machine lab, this is your Ubuntu environment. If needed, install it with <code>sudo apt install python3</code>. The scripts use only Python’s standard library.</div></aside>
+<h3>1. Inspect the two WordCount scripts</h3>
+<p>Work in <code>~/bigdata-course/bigdata/hadoop/lab/streaming</code>. Download <a href="lab/streaming/mapper.py" download>mapper.py</a> and <a href="lab/streaming/reducer.py" download>reducer.py</a>, or use the copies in the cloned repository. The mapper matches the Java baseline: it preserves case and punctuation and splits on space, tab, line feed, carriage return and form feed. Each output record has the form <code>word TAB 1</code>.</p>
+<details><summary>mapper.py — emit one pair per token</summary><div class="code"><div class="code-head"><span>Python 3</span><button type="button" class="copy" aria-label="Copy Python WordCount mapper">Copy</button></div><pre><code>#!/usr/bin/env python3
+&quot;&quot;&quot;WordCount mapper: keep the Java lesson&#x27;s tokenization and letter case.&quot;&quot;&quot;
+
+import re
+import sys
+
+
+for line in sys.stdin:
+    # Java StringTokenizer&#x27;s default separators: space, tab, LF, CR, form-feed.
+    for word in re.findall(r&quot;[^ \t\n\r\f]+&quot;, line):
+        print(f&quot;{word}\t1&quot;)</code></pre></div></details>
+<details><summary>reducer.py — sum one sorted group at a time</summary><div class="code"><div class="code-head"><span>Python 3</span><button type="button" class="copy" aria-label="Copy Python WordCount reducer">Copy</button></div><pre><code>#!/usr/bin/env python3
+&quot;&quot;&quot;Sum consecutive word groups; input must be sorted/grouped by word.&quot;&quot;&quot;
+
+import sys
+
+
+current_word = None
+total = 0
+
+for line in sys.stdin:
+    record = line.rstrip(&quot;\r\n&quot;)
+    if not record:
+        continue
+    word, count_text = record.split(&quot;\t&quot;)
+    count = int(count_text)
+    if not word or count &lt;= 0:
+        raise ValueError(&quot;Expected a nonempty word and a positive count&quot;)
+    if current_word is not None and word != current_word:
+        print(f&quot;{current_word}\t{total}&quot;)
+        total = 0
+    current_word = word
+    total += count
+
+# No following key arrives to trigger the last group; emit it explicitly.
+if current_word is not None:
+    print(f&quot;{current_word}\t{total}&quot;)</code></pre></div></details>
+<p>The reducer remembers the current word and total. A change of key finishes one group; the end of input finishes the last group. Empty input produces no output.</p>
+<h3>2. Test locally before submitting</h3>
+<div class="code"><div class="code-head"><span>Bash · local WordCount</span><button type="button" class="copy" aria-label="Copy local Python WordCount commands">Copy</button></div><pre><code>cd ~/bigdata-course/bigdata/hadoop/lab/streaming
+python3 --version
+set -o pipefail
+cat ../data/input-1.txt ../data/input-2.txt \
+  | python3 mapper.py \
+  | LC_ALL=C sort -t $'\t' -k1,1 \
+  | python3 reducer.py &gt; wordcount-local.tsv
+cat wordcount-local.tsv
+diff -u ../data/expected-output.txt wordcount-local.tsv</code></pre></div>
+<p><code>sort</code> groups the first tab-delimited field; <code>LC_ALL=C</code> makes the local sort reproducible. Expected counts are <code>data: 1</code>, <code>hadoop: 2</code> and <code>spark: 2</code>. A successful <code>diff</code> prints nothing. This shell pipeline tests the programs and grouping; Hadoop supplies the distributed execution for the next step.</p>
+<h3>3. Submit the same scripts to Hadoop</h3>
+<div class="code"><div class="code-head"><span>Bash · Hadoop Streaming</span><button type="button" class="copy" aria-label="Copy Hadoop Streaming WordCount commands">Copy</button></div><pre><code>streaming_wordcount_output="/week9/streaming-wordcount-$(date +%Y%m%d-%H%M%S)-$$"
+mapred streaming \
+  -D mapreduce.job.name=week9-python-wordcount \
+  -D mapreduce.job.reduces=1 \
+  -files mapper.py,reducer.py \
+  -input /week9/input \
+  -output "$streaming_wordcount_output" \
+  -mapper "python3 mapper.py" \
+  -reducer "python3 reducer.py"
+hdfs dfs -cat "$streaming_wordcount_output/part-*"</code></pre></div>
+<p><code>-files</code> makes the scripts available in each task’s working directory; it does not install Python. The explicit <code>python3</code> commands do not require executable file permissions. Keep generic options such as <code>-D</code> and <code>-files</code> before Streaming options such as <code>-input</code>. The timestamp and shell process number give each run a new output path, because Hadoop requires an output directory that does not already exist. One reducer makes the small result easy to inspect.</p>
+<h3 id="streaming-average">4. Extension: average response time by page</h3>
+<p>Apply the <a href="#aggregation">grouped-average example</a> with <a href="lab/streaming/latency_mapper.py" download>latency_mapper.py</a>, <a href="lab/streaming/sum_count_combiner.py" download>sum_count_combiner.py</a> and <a href="lab/streaming/latency_reducer.py" download>latency_reducer.py</a>. Keep all three scripts together: the reducer imports the combiner file’s validated grouping helper. The inputs and expected result are <a href="lab/streaming/data/response-times.csv" download>response-times.csv</a> and <a href="lab/streaming/data/expected-average.tsv" download>expected-average.tsv</a>.</p>
+<p><strong>CSV contract:</strong> the header is <code>path,response_ms</code>, with exactly two fields per physical line. A path begins with <code>/</code> and contains no tab, newline or control characters. A duration contains decimal digits only and represents nonnegative integer milliseconds. Ordinary quoted fields are accepted; multiline quoted CSV is unsupported. Exact header rows are ignored. Blank, missing or invalid records are skipped, and missing durations never become zero.</p>
+<p>The mapper sends <code>reporter:counter:StreamingLab,InvalidRecord,1</code> to <strong>stderr</strong> for each skipped record. The sample has one missing duration, so it produces one update to <code>StreamingLab.InvalidRecord</code>. Local runs display this counter line in the terminal; data stays on stdout.</p>
+<figure class="diagram edu-figure"><h4 class="edu-title">Keep a sum and count until the final reducer</h4>
+<div class="edu-grid"><div class="edu-card"><span class="edu-stage">Example combiner group A</span><strong>/search: 10, 20</strong><p>Mapper records: <code>(10, 1)</code>, <code>(20, 1)</code></p><div class="edu-down" aria-hidden="true">↓</div><code>/search TAB 30 TAB 2</code></div><div class="edu-card"><span class="edu-stage">Example combiner group B</span><strong>/search: 90</strong><p>Mapper record: <code>(90, 1)</code></p><div class="edu-down" aria-hidden="true">↓</div><code>/search TAB 90 TAB 1</code></div></div>
+<div class="edu-down" aria-hidden="true">↓</div><div class="node"><strong>Reducer sums both fields, then divides once</strong><p><code>(30 + 90) / (2 + 1) = 40.00 ms</code></p></div>
+<figcaption>The mapper and combiner share the protocol <code>path TAB sum TAB count</code>. The first tab ends the key; both numbers belong to the value. The grouping shown is illustrative: Hadoop may combine zero, one or multiple times. Every arrangement must produce the same final average.</figcaption></figure>
+<p>The combiner never divides. The reducer accepts either raw mapper pairs or combined pairs, rejects malformed intermediate records and nonpositive counts, and displays each final average to two decimal places.</p>
+<div class="code"><div class="code-head"><span>Bash · local average and one combiner pass</span><button type="button" class="copy" aria-label="Copy local average Streaming commands">Copy</button></div><pre><code>python3 latency_mapper.py &lt; data/response-times.csv \
+  | LC_ALL=C sort -t $'\t' -k1,1 \
+  | python3 latency_reducer.py &gt; average-local.tsv
+cat average-local.tsv
+diff -u data/expected-average.tsv average-local.tsv
+
+python3 latency_mapper.py &lt; data/response-times.csv \
+  | LC_ALL=C sort -t $'\t' -k1,1 \
+  | python3 sum_count_combiner.py \
+  | python3 latency_reducer.py &gt; average-combined.tsv
+diff -u average-local.tsv average-combined.tsv</code></pre></div>
+<p>Both runs produce <code>/courses: 100.00</code>, <code>/library: 60.00</code> and <code>/search: 40.00</code> milliseconds. Run the cluster version from the same directory:</p>
+<details><summary>Submit the grouped-average job to Hadoop</summary><div class="code"><div class="code-head"><span>Bash · Hadoop Streaming average</span><button type="button" class="copy" aria-label="Copy Hadoop Streaming average commands">Copy</button></div><pre><code>hdfs dfs -mkdir -p /week9/streaming-latency-input
+hdfs dfs -put -f data/response-times.csv /week9/streaming-latency-input/
+streaming_average_output="/week9/streaming-average-$(date +%Y%m%d-%H%M%S)-$$"
+mapred streaming \
+  -D mapreduce.job.name=week9-python-average \
+  -D mapreduce.job.reduces=1 \
+  -files latency_mapper.py,sum_count_combiner.py,latency_reducer.py \
+  -input /week9/streaming-latency-input/response-times.csv \
+  -output "$streaming_average_output" \
+  -mapper "python3 latency_mapper.py" \
+  -combiner "python3 sum_count_combiner.py" \
+  -reducer "python3 latency_reducer.py" \
+  -cmdenv PYTHONPATH=.
+hdfs dfs -cat "$streaming_average_output/part-*"</code></pre></div><p>The upload replaces only this extension’s named CSV file when the exercise is repeated. Keep all three extension scripts in <code>-files</code>, including when trying a submission without <code>-combiner</code>. The Streaming option <code>-cmdenv PYTHONPATH=.</code> tells Python to look for imported helper files in the task’s working directory, where Hadoop makes them available. Keep this option when submitting without <code>-combiner</code> as well.</p></details>
+<div class="edu-check"><strong>Check your reasoning</strong><p>Why must the mapper send a missing duration to the invalid-record counter instead of emitting <code>0</code>? Why can the reducer handle both <code>(10, 1)</code> and <code>(30, 2)</code> for the same page?</p><details><summary>Reveal the explanation</summary><p>A missing value is an unknown measurement; zero is a real measurement that would increase the count and lower the average. Both pairs describe a sum and the number of observations behind it, so the reducer adds sums and counts without depending on how often combining occurred.</p></details></div>
+<p class="source-note">Download the complete <a href="lab/streaming/README.md" download>Streaming lab README</a>. Official reference: <a href="https://hadoop.apache.org/docs/r3.5.0/hadoop-streaming/HadoopStreaming.html">Apache Hadoop Streaming</a>, including command options, file distribution and counters.</p>
+</section>
+
+<section class="section" id="references"><div class="section-index">14 / HADOOP</div><h2>References</h2><p>Official documentation for further study:</p><ul><li><a href="https://hadoop.apache.org/modules.html">Core Hadoop modules</a> and <a href="https://hadoop.apache.org/related.html">related projects</a></li><li><a href="https://hadoop.apache.org/docs/r3.5.0/hadoop-project-dist/hadoop-common/ClusterSetup.html">Hadoop cluster architecture and deployment</a></li><li><a href="https://hadoop.apache.org/">Apache Hadoop project</a> and <a href="https://hadoop.apache.org/releases">releases</a></li><li><a href="https://hadoop.apache.org/docs/r3.5.0/hadoop-project-dist/hadoop-hdfs/HdfsDesign.html">HDFS architecture</a></li><li><a href="https://hadoop.apache.org/docs/r3.5.0/hadoop-yarn/hadoop-yarn-site/YARN.html">YARN architecture</a></li><li><a href="https://hadoop.apache.org/docs/r3.5.0/hadoop-mapreduce-client/hadoop-mapreduce-client-core/MapReduceTutorial.html">MapReduce tutorial</a></li><li><a href="https://hadoop.apache.org/docs/r3.5.0/hadoop-project-dist/hadoop-common/SingleCluster.html">Single-node Hadoop setup</a></li><li><a href="https://learn.microsoft.com/en-us/windows/wsl/install">Microsoft WSL installation</a></li><li><a href="https://hadoop.apache.org/docs/r3.5.0/hadoop-streaming/HadoopStreaming.html">Hadoop Streaming: scripts, options and counters</a></li><li><a href="https://hadoop.apache.org/docs/r3.5.0/api/org/apache/hadoop/mapred/JobConf.html#setCombinerClass(java.lang.Class)">Combiner execution contract</a></li><li><a href="https://hadoop.apache.org/docs/r3.5.0/hadoop-project-dist/hadoop-common/filesystem/filesystem.html">Hadoop filesystem operation specification</a></li><li><a href="https://docs.python.org/3/library/csv.html">Python CSV reader</a></li></ul><h3>Additional reading in Hungarian</h3><p>The <a href="https://www.inf.u-szeged.hu/~hpeter/pages/BigData/">University of Szeged Big Data course materials</a> provide further explanations and exercises. The workload discussion, aggregation exercise and optional Python lab here develop related teaching ideas using the Hadoop version specified in this lesson.</p></section></main></div><footer class="footer"><div>Big Data Management and Processing · Eszterházy Károly Catholic University</div><a href="https://github.com/kadamQ/kadamQ.github.io">GitHub repository</a></footer></body></html>

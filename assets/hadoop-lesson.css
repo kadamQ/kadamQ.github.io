@@ -27,6 +27,7 @@
 .edu-scope{padding:16px;border:1px solid var(--line);border-radius:9px;background:var(--bg)}
 .edu-scope>.edu-stage{margin-bottom:12px}
 .edu-scope+.edu-scope{margin-top:12px}
+.edu-grid>.edu-scope+.edu-scope{margin-top:0}
 .edu-commands{margin-top:12px;padding:10px 12px;border-top:1px solid var(--line);font-size:.9rem;line-height:1.6}
 .edu-commands code{white-space:normal;overflow-wrap:anywhere}
 .edu-list{list-style:none;padding:0;margin:0;display:grid;gap:12px}
