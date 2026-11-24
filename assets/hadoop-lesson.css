@@ -1,0 +1,56 @@
+/* Focused teaching diagrams; loaded only by the Hadoop lesson. */
+.edu-route{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:24px 0 30px}
+.edu-route a{display:block;padding:14px 16px;border:1px solid var(--line);border-radius:8px;background:var(--surface);text-decoration:none}
+.edu-route strong,.edu-route span{display:block}
+.edu-route strong{font-size:.95rem}.edu-route span{color:var(--muted);font-size:.88rem;line-height:1.5;margin-top:4px}
+.edu-figure{container-type:inline-size}
+.edu-title{font-size:1.05rem!important;line-height:1.4!important;margin:0 0 18px!important;color:var(--text)}
+.edu-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:stretch}
+.edu-grid.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+.edu-flow{display:grid;grid-template-columns:minmax(0,1fr) minmax(82px,.55fr) minmax(0,1fr) minmax(82px,.55fr) minmax(0,1fr);gap:6px;align-items:center}
+.edu-lane{display:grid;grid-template-columns:minmax(0,1fr) minmax(95px,.7fr) minmax(0,1fr);gap:12px;align-items:center}
+.edu-lane+.edu-lane{margin-top:15px;padding-top:15px;border-top:1px dashed var(--line)}
+.edu-stack{display:grid;gap:14px}
+.edu-card{min-width:0;padding:15px 12px;border:1px solid var(--line);border-radius:9px;background:var(--surface);text-align:center;overflow-wrap:anywhere;font-size:.94rem;line-height:1.5}
+.edu-card>strong{display:block;margin-bottom:7px;font-size:.97rem;line-height:1.4}
+.edu-card p{margin:.35rem 0 0;font-size:.9rem;line-height:1.5;color:var(--muted)}
+.edu-card code{line-height:1.65;white-space:normal;overflow-wrap:anywhere}
+.edu-card .chip{font-size:.875rem}
+.edu-stage{display:block;color:var(--accent);font-size:.875rem;font-weight:700;line-height:1.4;margin-bottom:9px}
+.edu-arrow{min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--accent);font-size:1.3rem;line-height:1.4;text-align:center;overflow-wrap:normal}
+.edu-arrow>span{display:inline-block;font-size:1.35rem;line-height:1.25}
+.edu-arrow small{font-size:.875rem;line-height:1.4;color:var(--muted)}
+.edu-down{color:var(--accent);text-align:center;font-size:1.4rem;line-height:1.3;margin:10px 0}
+.edu-badge{display:inline-block;padding:3px 8px;border:1px solid var(--line);border-radius:5px;background:var(--bg);font-size:.875rem;line-height:1.4;margin:3px}
+.edu-failed{border-style:dashed;border-color:var(--accent);background:var(--soft)}
+.edu-failed .chip{text-decoration:line-through}
+.edu-scope{padding:16px;border:1px solid var(--line);border-radius:9px;background:var(--bg)}
+.edu-scope>.edu-stage{margin-bottom:12px}
+.edu-scope+.edu-scope{margin-top:12px}
+.edu-commands{margin-top:12px;padding:10px 12px;border-top:1px solid var(--line);font-size:.9rem;line-height:1.6}
+.edu-commands code{white-space:normal;overflow-wrap:anywhere}
+.edu-list{list-style:none;padding:0;margin:0;display:grid;gap:12px}
+.edu-list li{padding:12px 14px;border-left:3px solid var(--accent);background:var(--surface);border-radius:0 7px 7px 0;margin:0;font-size:.93rem}
+.edu-list li strong{display:block;margin-bottom:3px}
+.edu-figure figcaption{font-size:.875rem;line-height:1.55}
+.edu-figure details{background:var(--bg)}
+.chapter-bridge{margin:26px 0 8px;padding:13px 0 0;border-top:1px dashed var(--line);font-size:.95rem}
+.chapter-question{font-size:1.03rem;color:var(--muted);margin-top:-.3rem}
+.source-note{font-size:.875rem;line-height:1.6;color:var(--muted);margin-top:18px}
+.edu-table td:first-child{font-weight:650}
+.edu-lifetime{display:grid;gap:12px}
+.edu-lifetime>div{display:grid;grid-template-columns:130px minmax(0,1fr);gap:15px;align-items:center}
+.edu-bar{border:1px solid var(--line);border-left:4px solid #368574;border-radius:6px;padding:12px;background:var(--surface);font-size:.92rem;line-height:1.5}
+.edu-bar.temporary{border-left-color:var(--accent);margin:0 15%}
+.edu-number{display:block;font-size:1.65rem;line-height:1.3;font-weight:750;color:var(--accent);margin:.2rem 0}
+.edu-check{padding:15px 18px;background:var(--surface);border:1px solid var(--line);border-radius:8px;margin:20px 0}
+.edu-check strong{display:block;margin-bottom:5px}
+.edu-check p{margin:.4rem 0}
+.lesson .diagram .worker{min-width:0;overflow-wrap:anywhere}
+.lesson .diagram .system-card,.lesson .diagram .system-service,.lesson .diagram .system-caption{font-size:.9rem}
+.lesson .diagram .system-key,.lesson .diagram .system-lane-label{font-size:.875rem}
+@container(max-width:620px){.edu-flow{grid-template-columns:1fr;gap:5px}.edu-flow>.edu-arrow{min-height:26px}.edu-flow>.edu-arrow>span{transform:rotate(90deg)}.edu-flow>.edu-arrow:not(:has(span)){transform:rotate(90deg)}}
+@container(max-width:490px){.edu-lane{grid-template-columns:1fr;gap:8px}.edu-lane>.edu-arrow{padding:3px 0}.edu-lane>.edu-arrow>span{transform:rotate(90deg)}.edu-grid,.edu-grid.three{grid-template-columns:1fr}.edu-lifetime>div{grid-template-columns:1fr;gap:6px}.edu-bar.temporary{margin:0 8%}.edu-scope{padding:12px}}
+@media(max-width:600px){.edu-route{grid-template-columns:1fr}.edu-route a{padding:12px 14px}.edu-title{font-size:1rem!important}.edu-card{padding:13px 10px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+@media print{.edu-route{display:none}.edu-figure{break-inside:avoid}.edu-figure details{display:block}.edu-card,.edu-bar{background:white!important}}
