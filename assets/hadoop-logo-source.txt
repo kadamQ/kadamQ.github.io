@@ -1,3 +1,5 @@
-Apache Hadoop elephant mascot, archived official Apache Hadoop documentation.
-Source: https://hadoop.apache.org/docs/r1.2.1/images/hadoop-logo-2.gif
-Apache Hadoop and its logo are trademarks of the Apache Software Foundation.
+Hadoop mascot vector used in the Hadoop teaching page.
+Source: Devicon, https://github.com/devicons/devicon/blob/master/icons/hadoop/hadoop-original.svg
+Source blob: c2301e6d86491e497759c4d5a1e8d25a2d84acce
+The SVG is included without alteration. Apache Hadoop and its logo are trademarks of the Apache Software Foundation.
+The previous GIF remains in the repository, sourced from https://hadoop.apache.org/docs/r1.2.1/images/hadoop-logo-2.gif.
