@@ -1,0 +1,3 @@
+Apache Hadoop elephant mascot, archived official Apache Hadoop documentation.
+Source: https://hadoop.apache.org/docs/r1.2.1/images/hadoop-logo-2.gif
+Apache Hadoop and its logo are trademarks of the Apache Software Foundation.

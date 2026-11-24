@@ -1,0 +1,9 @@
+(function(){
+ const root=document.documentElement, theme=document.getElementById('theme');
+ try {const saved=localStorage.getItem('teaching-theme');if(saved==='light'||saved==='dark')root.dataset.theme=saved;}catch(e){}
+ if(theme)theme.addEventListener('click',()=>{const dark=root.dataset.theme==='dark'||(!root.dataset.theme&&matchMedia('(prefers-color-scheme: dark)').matches);root.dataset.theme=dark?'light':'dark';try{localStorage.setItem('teaching-theme',root.dataset.theme);}catch(e){}});
+ document.querySelectorAll('.copy').forEach(btn=>btn.addEventListener('click',async()=>{const text=btn.closest('.code').querySelector('code').textContent;try{await navigator.clipboard.writeText(text);btn.textContent='Copied';setTimeout(()=>btn.textContent='Copy',1400);}catch(e){const range=document.createRange();range.selectNodeContents(btn.closest('.code').querySelector('code'));const sel=window.getSelection();sel.removeAllRanges();sel.addRange(range);btn.textContent='Selected';setTimeout(()=>btn.textContent='Copy',1600);}}));
+ const controls=document.querySelectorAll('[data-phase-button]');
+ controls.forEach(btn=>btn.addEventListener('click',()=>{const phase=btn.dataset.phaseButton;controls.forEach(b=>b.setAttribute('aria-pressed',String(b===btn)));document.querySelectorAll('[data-phase]').forEach(p=>p.hidden=p.dataset.phase!==phase);}));
+ const links=[...document.querySelectorAll('.sidebar a[href^="#"]')];if(links.length&&'IntersectionObserver'in window){const sections=links.map(a=>document.querySelector(a.getAttribute('href'))).filter(Boolean);let observer=new IntersectionObserver(entries=>{for(const ent of entries)if(ent.isIntersecting){links.forEach(a=>{const active=a.getAttribute('href')==='#'+ent.target.id;a.classList.toggle('active',active);if(active)a.setAttribute('aria-current','location');else a.removeAttribute('aria-current');});}},{rootMargin:'-80px 0px -65% 0px'});sections.forEach(s=>observer.observe(s));}
+})();

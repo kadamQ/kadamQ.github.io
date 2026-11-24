@@ -1,0 +1,3 @@
+data	1
+hadoop	2
+spark	2
